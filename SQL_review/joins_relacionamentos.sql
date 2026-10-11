@@ -40,15 +40,3 @@ SELECT
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_itens_pedidos as it
 LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
 ON it.produto_id = p.id;
-
-
-
-
-
-
-
-
-
-
-
-
