@@ -1,3 +1,6 @@
+
+/* FUNDAMENTOS 10/10/2026 */
+
 /* 1. Como retornar nome e email de todos os clientes? -> SELECT nome, email */
 
 SELECT
