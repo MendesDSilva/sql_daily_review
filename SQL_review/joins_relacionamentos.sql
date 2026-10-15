@@ -166,12 +166,11 @@ SELECT DISTINCT
     c.produto_id
 FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_carrinho` AS c
 WHERE NOT EXISTS (
-    SELECT 1
-    FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_pedidos` AS p
-    INNER JOIN `dbt-project-508815.dbt_airflow_dw_stg.stg_itens_pedidos` AS it
-        ON p.id = it.pedido_id
-    WHERE p.cliente_id = c.cliente_id
-      AND it.produto_id = c.produto_id
+SELECT 1
+FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_pedidos` AS p
+INNER JOIN `dbt-project-508815.dbt_airflow_dw_stg.stg_itens_pedidos` AS it
+ON p.id = it.pedido_id
+WHERE p.cliente_id = c.cliente_id AND it.produto_id = c.produto_id
 );
 
 
@@ -184,7 +183,7 @@ SELECT
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
 LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_categorias as c 
 ON c.id = p.categoria_id 
-WHERE p.nome IS NULL
+WHERE p.nome IS NULL;
 
 
 /* 16. Como identificar clientes que avaliaram um produto que também compraram? */
@@ -204,19 +203,71 @@ ON i.pedido_id = p.id
 INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as pr
 ON pr.id = i.produto_id 
 INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_avaliacoes as a 
-ON a.produto_id = pr.id AND a.cliente_id = c.id 
+ON a.produto_id = pr.id AND a.cliente_id = c.id ;
 
 
 
+/* 17. Como comparar INNER JOIN e LEFT JOIN entre clientes e pedidos? */ 
+/* INNER JOIN Traz somente os clientes com pedidos */ 
+SELECT 
+*
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
+ON c.id = p.cliente_id ;
+
+/* LEFT JOIN Traz todos os clientes com e sem pedidos */ 
+SELECT 
+*
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
+ON c.id = p.cliente_id ;
 
 
+/* 18. Por que um JOIN entre pedidos, itens e pagamentos pode multiplicar linhas? */ 
+/* Porque um pedido pode ter um ou mais produtos com um ou mais formas de pagamento */
 
 
+/* 19. Como utilizar NOT EXISTS para encontrar clientes sem pedidos? */ 
+
+SELECT 
+	c.nome as cliente 
+	, p.id as pedido 
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c 
+LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p 
+ON p.cliente_id = c.id 
+WHERE NOT EXISTS(
+	SELECT 1
+	FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p
+	WHERE p.cliente_id = c.id
+);
 
 
+/* Como validar se um JOIN entre pedidos e clientes preservou a quantidade esperada de pedidos? */
 
+WITH pedidos_origem AS (
+    SELECT
+        COUNT(*) AS total_origem
+    FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_pedidos`
+),
 
+pedidos_join AS (
+    SELECT
+        COUNT(*) AS total_join
+    FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_pedidos` AS p
+    LEFT JOIN `dbt-project-508815.dbt_airflow_dw_stg.stg_clientes` AS c
+        ON p.cliente_id = c.id
+)
 
+SELECT
+    o.total_origem,
+    j.total_join,
+    j.total_join - o.total_origem AS diferenca,
+    CASE
+        WHEN o.total_origem = j.total_join THEN 'VALIDADO'
+        ELSE 'DIVERGÊNCIA'
+    END AS status_validacao
+FROM pedidos_origem AS o
+CROSS JOIN pedidos_join AS j;
 
 
 
