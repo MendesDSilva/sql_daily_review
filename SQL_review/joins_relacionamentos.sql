@@ -90,9 +90,7 @@ GROUP BY cliente_id, nome, produto_id, produto, nota, comentario;
 
 SELECT 
 	p.id as id_produto
-	,p.nome as produto 
-	,a.nota
-	,a.comentario 
+	,p.nome as produto  
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p 
 LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_avaliacoes as a 
 ON a.produto_id = p.id 
@@ -127,12 +125,9 @@ ON I.pedido_id = p.id;
 
 SELECT
 	pedido_id
-	,produto_id
-	,quantidade
-	,preco_unitario
-	,subtotal
+	,SUM(subtotal) AS valor_total
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_itens_pedidos
-GROUP BY 1,2,3,4,5;
+GROUP BY 1;
 
 
 /* 12. Como identificar pedidos sem pagamento registrado? */
@@ -152,9 +147,9 @@ SELECT
 	pg.id as id_pagamento
 	,c.nome as nome_cliente
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p
-LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pagamentos as pg
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pagamentos as pg
 ON pg.pedido_id = p.id 
-LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
 ON c.id = p.cliente_id 
 WHERE c.nome = 'ryan da luz';
 
@@ -177,13 +172,13 @@ WHERE p.cliente_id = c.cliente_id AND it.produto_id = c.produto_id
 /* 15. Como retornar categorias que não possuem produtos? */
 
 SELECT 
-	c.nome  as categoria	
-	,p.nome as produto
-	
-FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
-LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_categorias as c 
-ON c.id = p.categoria_id 
-WHERE p.nome IS NULL;
+c.id as id_categoria
+,c.nome as nome_categoria
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_categorias as c
+LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p 
+ON p.id = c.id 
+WHERE p.id IS NULL;
+
 
 
 /* 16. Como identificar clientes que avaliaram um produto que também compraram? */
@@ -219,7 +214,7 @@ ON c.id = p.cliente_id ;
 SELECT 
 *
 FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p 
-INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
+LEFT JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c
 ON c.id = p.cliente_id ;
 
 
