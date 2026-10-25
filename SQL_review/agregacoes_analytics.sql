@@ -166,6 +166,58 @@ GROUP BY marca
 ORDER BY total_pedidos, unidades_vendidas, receita DESC;
 
 
+/* 11. Como calcular a quantidade de novos clientes por mês? */
+
+SELECT 
+	FORMAT_DATE('%Y-%m', c.data_registro ) as ano_mes,
+	COUNT(DISTINCT c.id) as total_clientes
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c 
+GROUP BY ano_mes
+ORDER BY ano_mes;
+
+
+/* 12. Como calcular a taxa de recompra? */
+/* Para calcular a taxa de recompra, precisamos identificar quantos clientes realizaram dois ou mais pedidos concluídos em relação ao total de clientes que realizaram pelo menos um pedido concluído.*/
+
+WITH compras_por_cliente AS (
+    SELECT
+        cliente_id,
+        COUNT(DISTINCT id) AS total_compras
+    FROM `dbt-project-508815.dbt_airflow_dw_stg.stg_pedidos`
+    WHERE status = 'concluído'
+    GROUP BY cliente_id
+)
+
+SELECT
+    COUNT(*) AS clientes_compradores,
+    COUNTIF(total_compras >= 2) AS clientes_recorrentes,
+    ROUND(
+        SAFE_DIVIDE(
+            COUNTIF(total_compras >= 2),
+            COUNT(*)
+        ) * 100,
+        2
+    ) AS taxa_recompra_pct
+FROM compras_por_cliente;
+
+
+/* 13. Como identificar clientes com mais de três pedidos concluídos? */
+/* No BigQuery, o WHERE é processado antes do agrupamento. Portanto, não pode filtrar o resultado de COUNT(). */
+
+SELECT 
+	c.id as id_cliente,
+	c.nome as cliente,
+	COUNT(DISTINCT p.id) as total_pedidos
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_clientes as c 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as p
+ON p.cliente_id = c.id 
+WHERE p.status = 'concluído'
+GROUP BY id_cliente, cliente
+HAVING COUNT(DISTINCT p.id) > 3
+ORDER BY total_pedidos DESC; 
+
+
+
 
 
 
