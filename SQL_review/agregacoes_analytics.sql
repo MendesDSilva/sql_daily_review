@@ -102,5 +102,39 @@ ORDER BY nota_media DESC;
 
 /* 7. Como calcular a nota média por categoria? */
 
+SELECT
+	c.id as id_categoria,
+	c.nome as categoria,
+	COUNT(a.nota) as total_avaliacoes,
+	ROUND(AVG(a.nota),2) as nota_media
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_categorias as c 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
+ON p.categoria_id = c.id 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_avaliacoes as a 
+ON a.produto_id = p.id 
+GROUP BY id_categoria, categoria
+ORDER BY total_avaliacoes, nota_media DESC;
+
+
+/* 8. Como identificar categorias com maior volume de vendas? */
+
+SELECT 
+	c.id as id_categoria,
+	c.nome as categoria,
+	SUM(i.quantidade) as total_vendido
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_categorias as c
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
+ON p.categoria_id = c.id 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_itens_pedidos as i 
+ON i.produto_id = p.id
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as pe
+ON pe.id = i.pedido_id 
+WHERE pe.status = 'concluído'
+GROUP BY id_categoria, categoria
+ORDER BY total_vendido DESC;
+
+
+
+
 
 
