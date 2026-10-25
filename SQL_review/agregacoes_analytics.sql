@@ -134,6 +134,46 @@ GROUP BY id_categoria, categoria
 ORDER BY total_vendido DESC;
 
 
+/* 9. Como calcular quantidade total vendida por produto? */
+
+SELECT 	
+	p.id as id_produto,
+	SUM(i.quantidade) as qtd_vendida
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_itens_pedidos as i
+ON i.produto_id = p.id 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as pe
+ON pe.id = i.pedido_id 
+WHERE pe.status = 'concluído'
+GROUP BY id_produto
+ORDER BY qtd_vendida DESC;
+
+
+/* 10. Como calcular receita por marca? */
+
+SELECT
+	p.marca as marca,
+	COUNT(DISTINCT pe.id) as total_pedidos,
+	SUM(i.quantidade) as unidades_vendidas, 
+	ROUND(SUM(i.quantidade*i.preco_unitario),2) as receita
+FROM `dbt-project-508815`.dbt_airflow_dw_stg.stg_produtos as p 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_itens_pedidos as i 
+ON i.produto_id  = p.id 
+INNER JOIN `dbt-project-508815`.dbt_airflow_dw_stg.stg_pedidos as pe
+ON pe.id = i.pedido_id 
+WHERE pe.status = 'concluído'
+GROUP BY marca 
+ORDER BY total_pedidos, unidades_vendidas, receita DESC;
+
+
+
+
+
+
+
+
+
+
 
 
 
